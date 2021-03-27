@@ -34,7 +34,7 @@ setup(
     description="A simple tool for cost/time estimation of projects.",
     entry_points={
         'console_scripts': [
-            'estima_thor=estima_thor.cli:main',
+            'estimathor=estima_thor.cli:main',
         ],
     },
     install_requires=requirements,
