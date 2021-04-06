@@ -97,7 +97,7 @@ class EstimaThor(object):
         for index, task_estimation in self.task_estimations_df.iterrows():
             model = fit_distribution(task_estimation.iloc[1:],
                                      self.estimation_quantiles,
-                                     distribution_name="norm")
+                                     distribution_name="spline")
             model_list.append(model)
 
 
@@ -105,16 +105,29 @@ class EstimaThor(object):
             # add pdf to plot
             fig.clf()
             ax_pdf = fig.add_subplot(2, 1, 1)
-            ax_pdf.plot(time_list,
-                        np.vectorize(model.pdf)(time_list),
-                        label="PDF Fit")
-            ax_pdf.grid(True)
-            ax_pdf.legend()
-            ax_pdf.text(x=0.8,
-                        y=0.5,
-                        s=f"a = {np.round(model.loc, 5)} \n b = {np.round(model.scale, 5)}",
-                        transform=ax_pdf.transAxes)
+            sampled = [model.inv_cdf(x) for x in np.random.rand(10000)]
+            ax_pdf.hist(sampled,
+                        bins=100,
+                        range=[0, 100])
 
+            # ax_pdf.plot(time_list,
+            #             np.vectorize(model.pdf)(time_list),
+            #             label="PDF Fit")
+            # ax_pdf.grid(True)
+            # ax_pdf.legend()
+            # ax_pdf.text(x=0.8,
+            #             y=0.5,
+            #             s=f"a = {np.round(model.loc, 5)} \n b = {np.round(model.scale, 5)}",
+            #             transform=ax_pdf.transAxes)
+
+
+            print("DEBUG ######################")
+            print(model)
+            x = 4
+            y = model.cdf(x)
+            vec_cdf = np.vectorize(model.cdf)
+            # print(vec_cdf(time_list))
+            print(x, y)
 
             # add cdf to plot
             ax_cdf = fig.add_subplot(2, 1, 2)
@@ -134,7 +147,7 @@ class EstimaThor(object):
             ax_cdf.grid(True)
             ax_cdf.legend()
 
-            fig.savefig(f"plot_{task_estimation.iloc[0]}.pdf")
+            fig.savefig(f"spline_plot_{task_estimation.iloc[0]}.pdf")
 
 
         return
