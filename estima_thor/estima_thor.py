@@ -17,11 +17,12 @@ class EstimaThor(object):
     """
     Main class of this tool
     """
+    dpi_scale = 0.14760147601476015
 
     def __init__(self,
                  task_estimations_df: pd.DataFrame,
                  estimation_quantiles=(0.05, 0.5, 0.95),
-                 distribution_name="norm"):
+                 distribution_name="spline"):
         """
         Constructor for this class
 
@@ -79,6 +80,54 @@ class EstimaThor(object):
                                      distribution_name=self.distribution_name)
             model_list.append(model)
         self.model_list = model_list
+        return
+
+    def simulate_project(self, n: int=1000):
+        """
+        Simulate the duration of the project n-times.
+
+        Parameters
+        ----------
+        n : int
+            Number of times the simulation should be run
+
+        Returns
+        -------
+        run_time_list : array like
+            Simulated duration for each simulation, n-dimensional.
+        """
+        run_time_list = np.zeros(shape=n)
+        for i in range(n):
+            # get random (distributed according to task estimations) duration for each task
+            for model in self.model_list:
+                task_duration = model.inv_cdf(np.random.rand())
+                run_time_list[i] += task_duration
+
+        # return results
+        fig = plt.figure(dpi=self.dpi_scale,
+                         figsize=(8, 4.5))
+        ax_hist = fig.add_subplot(1, 1, 1)
+        ax_hist.grid(True)
+
+        # Plot histogram of task project estimations
+        median = np.quantile(run_time_list, q=0.5)
+        ax_hist.hist(run_time_list,
+                     bins=int(n/10),
+                     range=[0, median * 3],
+                     color="C0")
+
+        # Plot some statistics
+        qtl_05 = np.quantile(run_time_list, q=0.05)
+        qtl_95 = np.quantile(run_time_list, q=0.95)
+        mean = np.mean(run_time_list)
+        ax_hist.axvline(qtl_05, label=f"5% Quantile = {np.round(qtl_05):.0f}", color="C4")
+        ax_hist.axvline(median, label=f"Median = {np.round(median):.0f}", color="C1")
+        ax_hist.axvline(mean, label=f"Mean = {np.round(mean):.0f}", color="C2")
+        ax_hist.axvline(qtl_95, label=f"95% Quantile = {np.round(qtl_95):.0f}", color="C3")
+        ax_hist.legend()
+
+        # Save figure
+        fig.savefig("project_durations.pdf")
         return
 
     def test_function(self):
